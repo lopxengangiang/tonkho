@@ -1,0 +1,7 @@
+gen_seed.py
+data_raw.json
+.claude/
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db

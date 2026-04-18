@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<meta name="theme-color" content="#0b0b18" />
+<meta name="robots" content="noindex,nofollow" />
+<title>Tồn kho — Tra cứu giá bán</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a14;
+  --card:rgba(255,255,255,0.06);
+  --card-border:rgba(255,255,255,0.12);
+  --text:#eef0ff;
+  --muted:#a9aed0;
+  --accent:#8b5cf6;
+  --accent-2:#ec4899;
+  --ok:#10b981;
+  --warn:#f59e0b;
+  --err:#ef4444;
+  --radius:16px;
+  --shadow:0 20px 60px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'Be Vietnam Pro',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+body{
+  min-height:100vh;
+  background:
+    radial-gradient(1200px 700px at 10% -10%, rgba(139,92,246,.25), transparent 60%),
+    radial-gradient(1000px 600px at 110% 10%, rgba(236,72,153,.22), transparent 60%),
+    radial-gradient(900px 700px at 50% 110%, rgba(59,130,246,.18), transparent 60%),
+    linear-gradient(180deg,#0a0a14 0%,#0a0a18 100%);
+  overflow-x:hidden;
+}
+.hidden{display:none !important}
+
+/* ===== GATE ===== */
+.gate{min-height:100vh;display:grid;place-items:center;padding:24px}
+.gate-card{
+  width:min(420px,100%);
+  background:var(--card);border:1px solid var(--card-border);
+  border-radius:24px;padding:36px 28px;
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  box-shadow:var(--shadow);text-align:center;animation:rise .6s ease;
+}
+.logo{
+  width:64px;height:64px;margin:0 auto 18px;border-radius:18px;
+  display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  box-shadow:0 10px 30px rgba(139,92,246,.45);
+}
+.logo svg{width:34px;height:34px;color:#fff}
+.gate h1{font-size:22px;font-weight:700;margin:0 0 6px;letter-spacing:-.3px}
+.gate p{color:var(--muted);margin:0 0 22px;font-size:14px;line-height:1.5}
+.pw-wrap{
+  position:relative;margin-bottom:14px;
+}
+.pw-input{
+  width:100%;padding:14px 48px 14px 16px;
+  border:1.5px solid var(--card-border);border-radius:12px;
+  background:rgba(255,255,255,.04);color:var(--text);
+  font-family:inherit;font-size:16px;font-weight:500;
+  outline:none;transition:all .18s ease;
+}
+.pw-input:focus{
+  border-color:var(--accent);box-shadow:0 0 0 4px rgba(139,92,246,.25);
+  background:rgba(255,255,255,.08);
+}
+.pw-wrap.shake{animation:shake .4s}
+.pw-toggle{
+  position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  background:transparent;border:none;color:var(--muted);
+  padding:6px 8px;cursor:pointer;border-radius:8px;
+  display:grid;place-items:center;
+}
+.pw-toggle:hover{color:var(--text);background:rgba(255,255,255,.06)}
+.pw-toggle svg{width:20px;height:20px}
+.btn{
+  width:100%;padding:14px 20px;border:none;border-radius:12px;
+  font-family:inherit;font-weight:600;font-size:15px;cursor:pointer;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  color:#fff;box-shadow:0 10px 30px rgba(139,92,246,.35);
+  transition:transform .15s ease, box-shadow .2s ease, opacity .2s;
+}
+.btn:hover{transform:translateY(-1px);box-shadow:0 14px 34px rgba(139,92,246,.5)}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.55;cursor:not-allowed;transform:none;background:rgba(255,255,255,.08);box-shadow:none;color:var(--muted)}
+.gate .err{color:var(--err);font-size:13px;min-height:18px;margin-top:10px;line-height:1.5}
+.gate .err .lock{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);
+  padding:8px 12px;border-radius:10px;margin-top:6px;color:#fca5a5;
+}
+.gate .err .lock svg{width:16px;height:16px;flex-shrink:0}
+
+/* ===== APP ===== */
+.app{max-width:1200px;margin:0 auto;padding:28px 20px 60px}
+.topbar{display:flex;align-items:center;gap:14px;margin-bottom:22px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.brand .logo{width:44px;height:44px;margin:0;border-radius:12px}
+.brand .logo svg{width:24px;height:24px}
+.brand h1{font-size:20px;margin:0;letter-spacing:-.3px}
+.brand small{color:var(--muted);font-size:12px}
+.spacer{flex:1}
+.timer{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 14px;background:var(--card);border:1px solid var(--card-border);
+  border-radius:999px;font-size:13px;color:var(--muted);
+  backdrop-filter:blur(10px);
+}
+.timer .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok);animation:pulse 2s infinite}
+.timer.warn .dot{background:var(--warn);box-shadow:0 0 8px var(--warn)}
+.timer.danger .dot{background:var(--err);box-shadow:0 0 8px var(--err)}
+.iconbtn{
+  background:transparent;color:var(--muted);border:1px solid var(--card-border);
+  padding:8px 14px;border-radius:999px;cursor:pointer;font-family:inherit;font-size:13px;
+  transition:all .2s;display:inline-flex;align-items:center;gap:6px;
+}
+.iconbtn:hover{color:var(--text);border-color:rgba(255,255,255,.3)}
+.iconbtn svg{width:14px;height:14px}
+.iconbtn.active{
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  color:#fff;border-color:transparent;
+}
+
+.search-card{
+  background:var(--card);border:1px solid var(--card-border);
+  border-radius:var(--radius);padding:18px;backdrop-filter:blur(20px);
+  box-shadow:var(--shadow);margin-bottom:18px;
+}
+.search-row{display:flex;gap:10px;align-items:center}
+.search-input{
+  flex:1;display:flex;align-items:center;gap:10px;
+  background:rgba(255,255,255,.05);border:1.5px solid var(--card-border);
+  padding:12px 16px;border-radius:12px;transition:all .18s;
+}
+.search-input:focus-within{
+  border-color:var(--accent);box-shadow:0 0 0 4px rgba(139,92,246,.2);
+  background:rgba(255,255,255,.08);
+}
+.search-input svg{width:20px;height:20px;color:var(--muted);flex-shrink:0}
+.search-input input{
+  flex:1;background:transparent;border:none;color:var(--text);
+  font-family:inherit;font-size:15px;outline:none;min-width:0;
+}
+.search-input input::placeholder{color:var(--muted)}
+.clear-btn{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:4px;border-radius:6px;display:grid;place-items:center}
+.clear-btn:hover{color:var(--text);background:rgba(255,255,255,.08)}
+.clear-btn svg{width:18px;height:18px}
+
+.row-extra{display:flex;gap:8px;margin-top:14px;align-items:center;flex-wrap:wrap}
+.stats{color:var(--muted);font-size:13px;margin-left:auto}
+
+/* ===== TABLE ===== */
+.list-card{
+  background:var(--card);border:1px solid var(--card-border);
+  border-radius:var(--radius);backdrop-filter:blur(20px);
+  box-shadow:var(--shadow);overflow:hidden;
+}
+.list-head,.row{
+  display:grid;grid-template-columns:120px 1fr 70px 150px 150px;
+  gap:14px;padding:14px 18px;align-items:center;
+}
+.list-head{
+  border-bottom:1px solid var(--card-border);
+  font-size:12px;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.5px;
+  background:rgba(255,255,255,.02);
+  position:sticky;top:0;z-index:2;backdrop-filter:blur(20px);
+}
+.list-head .num{text-align:right}
+.row{border-bottom:1px solid rgba(255,255,255,.05);font-size:14px;transition:background .15s}
+.row:last-child{border-bottom:none}
+.row:hover{background:rgba(255,255,255,.03)}
+.row.dirty{background:rgba(245,158,11,.08)}
+.row.dirty:hover{background:rgba(245,158,11,.12)}
+.row .ma{font-family:'SF Mono',ui-monospace,monospace;color:var(--muted);font-size:13px}
+.row .ten{font-weight:500;overflow-wrap:anywhere}
+.row .dvt{color:var(--muted);font-size:13px}
+.row .nhap,.row .ban{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.row .nhap{color:#cbd5e1;font-size:14px}
+.row .ban{
+  background:linear-gradient(135deg,#a5b4fc,#f0abfc);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  font-size:15px;font-weight:700;
+}
+.row .nhap.zero,.row .ban.zero{background:none;color:var(--muted);font-weight:500;font-size:13px;-webkit-text-fill-color:var(--muted)}
+
+.price-input{
+  width:100%;text-align:right;background:rgba(255,255,255,.08);
+  border:1.5px solid var(--card-border);border-radius:8px;
+  color:var(--text);padding:7px 10px;font-family:inherit;font-size:13px;
+  font-variant-numeric:tabular-nums;font-weight:600;outline:none;
+  transition:all .15s;
+}
+.price-input:focus{border-color:var(--accent);background:rgba(255,255,255,.12);box-shadow:0 0 0 3px rgba(139,92,246,.2)}
+.price-input.changed{border-color:var(--warn);background:rgba(245,158,11,.1)}
+
+.highlight{background:rgba(245,158,11,.28);color:#fde68a;padding:0 2px;border-radius:3px}
+
+.empty{padding:60px 20px;text-align:center;color:var(--muted)}
+.empty svg{width:48px;height:48px;opacity:.4;margin-bottom:10px}
+.empty p{margin:6px 0 0;font-size:14px}
+
+.savebar{
+  position:sticky;bottom:16px;margin-top:12px;
+  display:flex;gap:10px;align-items:center;
+  background:rgba(20,20,40,.85);backdrop-filter:blur(14px);
+  border:1px solid var(--card-border);border-radius:14px;padding:10px 14px;
+  box-shadow:0 20px 50px rgba(0,0,0,.5);z-index:5;animation:rise .3s ease;flex-wrap:wrap;
+}
+.savebar .msg{color:var(--muted);font-size:13px}
+.savebar .msg b{color:var(--warn)}
+.savebar .sp{flex:1;min-width:10px}
+.savebar button{padding:9px 16px;border-radius:10px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;border:none}
+.savebar .save{background:linear-gradient(135deg,var(--ok),#059669);color:#fff;box-shadow:0 6px 18px rgba(16,185,129,.35)}
+.savebar .save:hover{transform:translateY(-1px)}
+.savebar .cancel,.savebar .export{background:transparent;color:var(--muted);border:1px solid var(--card-border)}
+.savebar .cancel:hover,.savebar .export:hover{color:var(--text)}
+
+.toast-wrap{position:fixed;top:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:100;pointer-events:none}
+.toast{
+  pointer-events:auto;padding:12px 16px;border-radius:12px;
+  background:rgba(20,20,40,.9);backdrop-filter:blur(14px);
+  border:1px solid var(--card-border);color:var(--text);
+  font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.45);
+  animation:slidein .25s ease;max-width:340px;
+}
+.toast.ok{border-left:3px solid var(--ok)}
+.toast.err{border-left:3px solid var(--err)}
+
+.edit-banner{
+  background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.3);
+  color:#c4b5fd;padding:10px 14px;border-radius:12px;margin-bottom:14px;
+  font-size:13px;line-height:1.5;display:flex;gap:10px;align-items:flex-start;
+}
+.edit-banner svg{width:18px;height:18px;flex-shrink:0;margin-top:1px}
+
+@media (max-width:720px){
+  .list-head{display:none}
+  .row{grid-template-columns:1fr;gap:6px;padding:14px 16px;border:1px solid rgba(255,255,255,.06);border-radius:12px;margin:8px}
+  .row > div{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .row > div::before{content:attr(data-label);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:500;flex-shrink:0}
+  .row .ten{display:block}
+  .row .ten::before{content:none}
+  .list-card{background:transparent;border:none;box-shadow:none;padding:4px}
+  .price-input{max-width:160px}
+}
+
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes slidein{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-4px)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+
+.footer{text-align:center;color:var(--muted);font-size:12px;margin-top:30px;padding:10px}
+</style>
+</head>
+<body>
+
+<!-- ===== PASSWORD GATE ===== -->
+<div id="gate" class="gate">
+  <div class="gate-card">
+    <div class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+    </div>
+    <h1>Tra cứu tồn kho</h1>
+    <p>Nhập mật khẩu để truy cập.</p>
+
+    <form id="pwForm" autocomplete="off" novalidate>
+      <div class="pw-wrap" id="pwWrap">
+        <input
+          id="pw"
+          class="pw-input"
+          type="password"
+          autocomplete="current-password"
+          placeholder="Mật khẩu"
+          aria-label="Mật khẩu"
+          autofocus
+        />
+        <button type="button" class="pw-toggle" id="pwToggle" aria-label="Hiện / ẩn mật khẩu">
+          <svg id="pwEyeOpen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg id="pwEyeOff" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 2 20 20"/><path d="M6.7 6.7C4.1 8.4 2 12 2 12s3 7 10 7a10 10 0 0 0 5.3-1.5"/><path d="M9.9 4.2A10.9 10.9 0 0 1 12 4c7 0 10 7 10 7a17 17 0 0 1-2.2 3.2"/><path d="M14.1 14.1a3 3 0 1 1-4.2-4.2"/></svg>
+        </button>
+      </div>
+      <div class="err" id="pwErr" role="alert" aria-live="polite"></div>
+      <button type="submit" class="btn" id="pwSubmit">Mở khóa</button>
+    </form>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<main id="app" class="app hidden" aria-hidden="true">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><path d="M12 22.08V12"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Tra cứu tồn kho</h1>
+        <small id="metaInfo">—</small>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="timer" id="timer" title="Phiên sẽ hết hạn sau khoảng thời gian này">
+      <span class="dot"></span><span id="timerText">15:00</span>
+    </div>
+    <button class="iconbtn" id="editBtn" type="button" title="Chỉnh sửa giá nhập / giá bán">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+      <span>Sửa</span>
+    </button>
+    <button class="iconbtn" id="logoutBtn" type="button">Khóa</button>
+  </div>
+
+  <section class="search-card">
+    <div class="search-row">
+      <div class="search-input">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="q" type="search" placeholder="Tìm theo tên, mã hàng…" autocomplete="off" />
+        <button class="clear-btn hidden" id="clearBtn" type="button" aria-label="Xóa">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="row-extra">
+      <div class="stats" id="stats">—</div>
+    </div>
+  </section>
+
+  <div id="editBanner" class="edit-banner hidden">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+    <div>Thay đổi chỉ lưu trên trình duyệt này. Bấm <b>Xuất JSON</b> trong thanh dưới để sao lưu và cập nhật vào <code>data.js</code> khi cần đồng bộ cho người khác.</div>
+  </div>
+
+  <section class="list-card" aria-label="Danh sách hàng">
+    <div class="list-head">
+      <div>Mã</div><div>Tên hàng</div><div>ĐVT</div>
+      <div class="num">Giá nhập</div><div class="num">Giá bán</div>
+    </div>
+    <div id="list"></div>
+  </section>
+
+  <div id="savebar" class="savebar hidden">
+    <div class="msg"><b id="dirtyCount">0</b> thay đổi chưa lưu</div>
+    <div class="sp"></div>
+    <button type="button" class="export" id="exportBtn">Xuất JSON</button>
+    <button type="button" class="cancel" id="cancelBtn">Hủy</button>
+    <button type="button" class="save" id="saveBtn">Lưu</button>
+  </div>
+
+  <div class="footer">Dữ liệu cập nhật <span id="updatedAt">—</span> • Bản chỉnh sửa <span id="overrideInfo">—</span></div>
+</main>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script src="data.js"></script>
+<script>
+/* ============ CẤU HÌNH ============ */
+const CONFIG = {
+  PASSWORD: "ngangiang2810@",     // Mật khẩu truy cập
+  MAX_ATTEMPTS: 3,                // Khóa sau 3 lần sai
+  LOCK_MS: 60 * 1000,             // Khóa 1 phút
+  SESSION_MS: 15 * 60 * 1000,     // Phiên 15 phút
+};
+const STORE = {
+  SESSION: "tonkho_session_v3",
+  LOCK:    "tonkho_lock_v3",
+  OVERRIDES: "tonkho_overrides_v3",
+};
+
+/* ============ STATE ============ */
+const state = {
+  exp: 0,
+  editing: false,
+  edited: new Map(),         // ma -> { nhap?, ban? }
+  overrides: new Map(),      // ma -> { nhap?, ban? } — đã lưu
+  query: "",
+};
+
+/* ============ Utils ============ */
+function fmtVND(n){
+  if(!n || n<=0) return "—";
+  return new Intl.NumberFormat("vi-VN").format(n) + "₫";
+}
+function parseMoney(s){
+  const n = Number(String(s||"").replace(/[^\d]/g,""));
+  return isFinite(n) ? n : 0;
+}
+function fmtInput(n){ return n>0 ? new Intl.NumberFormat("vi-VN").format(n) : ""; }
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function normalize(s){
+  return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d");
+}
+function highlight(text, terms){
+  if(!terms.length) return escapeHtml(text);
+  const norm = normalize(text);
+  const ranges = [];
+  for(const t of terms){
+    if(!t) continue;
+    let i=0;
+    while((i = norm.indexOf(t, i))>=0){ ranges.push([i, i+t.length]); i += t.length; }
+  }
+  if(!ranges.length) return escapeHtml(text);
+  ranges.sort((a,b)=>a[0]-b[0]);
+  const merged=[];
+  for(const r of ranges){
+    if(merged.length && r[0] <= merged[merged.length-1][1]) merged[merged.length-1][1] = Math.max(merged[merged.length-1][1], r[1]);
+    else merged.push(r.slice());
+  }
+  let out="", cur=0;
+  for(const [a,b] of merged){
+    out += escapeHtml(text.slice(cur,a));
+    out += '<span class="highlight">' + escapeHtml(text.slice(a,b)) + "</span>";
+    cur = b;
+  }
+  out += escapeHtml(text.slice(cur));
+  return out;
+}
+function toast(msg, kind="ok", ms=2800){
+  const host = document.getElementById("toasts");
+  const t = document.createElement("div");
+  t.className = "toast " + kind;
+  t.textContent = msg;
+  host.appendChild(t);
+  setTimeout(()=>t.style.opacity="0", ms);
+  setTimeout(()=>t.remove(), ms+400);
+}
+
+/* ============ LOCKOUT (localStorage, tồn tại qua reload) ============ */
+function getLock(){
+  try{
+    const s = localStorage.getItem(STORE.LOCK);
+    if(!s) return { attempts:0, until:0 };
+    const obj = JSON.parse(s);
+    return { attempts: obj.attempts|0, until: obj.until|0 };
+  }catch{ return { attempts:0, until:0 }; }
+}
+function setLock(obj){ localStorage.setItem(STORE.LOCK, JSON.stringify(obj)); }
+function clearLock(){ localStorage.removeItem(STORE.LOCK); }
+function isLocked(){
+  const l = getLock();
+  return l.until > Date.now();
+}
+
+/* ============ SESSION ============ */
+function grantSession(){
+  const exp = Date.now() + CONFIG.SESSION_MS;
+  state.exp = exp;
+  sessionStorage.setItem(STORE.SESSION, JSON.stringify({ exp }));
+  return exp;
+}
+function loadSession(){
+  try{
+    const s = sessionStorage.getItem(STORE.SESSION);
+    if(!s) return 0;
+    const { exp } = JSON.parse(s);
+    return (typeof exp === "number" && exp > Date.now()) ? exp : 0;
+  }catch{ return 0; }
+}
+function clearSessionStore(){ sessionStorage.removeItem(STORE.SESSION); }
+
+/* ============ OVERRIDES (localStorage) ============ */
+function loadOverrides(){
+  try{
+    const s = localStorage.getItem(STORE.OVERRIDES);
+    if(!s) return { updated: null, data: {} };
+    const obj = JSON.parse(s);
+    return { updated: obj.updated || null, data: obj.data || {} };
+  }catch{ return { updated: null, data: {} }; }
+}
+function saveOverrides(map){
+  const data = {};
+  for(const [ma, patch] of map.entries()) data[ma] = patch;
+  const payload = { updated: new Date().toISOString().slice(0,10), data };
+  localStorage.setItem(STORE.OVERRIDES, JSON.stringify(payload));
+  return payload;
+}
+function hydrateOverrides(){
+  const { updated, data } = loadOverrides();
+  state.overrides = new Map();
+  for(const [ma, patch] of Object.entries(data || {})) state.overrides.set(ma, patch);
+  const n = state.overrides.size;
+  document.getElementById("overrideInfo").textContent = n>0 ? `${n} mặt hàng, ${updated||""}` : "không có";
+  return n;
+}
+
+/* ============ DOM handles ============ */
+const gateEl = document.getElementById("gate");
+const appEl  = document.getElementById("app");
+const pwInput  = document.getElementById("pw");
+const pwErr    = document.getElementById("pwErr");
+const pwForm   = document.getElementById("pwForm");
+const pwSubmit = document.getElementById("pwSubmit");
+const pwWrap   = document.getElementById("pwWrap");
+
+/* Show/hide password */
+document.getElementById("pwToggle").addEventListener("click", ()=>{
+  const on = pwInput.type === "password";
+  pwInput.type = on ? "text" : "password";
+  document.getElementById("pwEyeOpen").classList.toggle("hidden", on);
+  document.getElementById("pwEyeOff").classList.toggle("hidden", !on);
+  pwInput.focus();
+});
+
+/* ============ GATE LOGIC ============ */
+let lockTimer = null;
+function stopLockTimer(){ if(lockTimer){ clearInterval(lockTimer); lockTimer = null; } }
+
+function renderLockState(){
+  const lock = getLock();
+  const now = Date.now();
+  if(lock.until > now){
+    const remain = Math.ceil((lock.until - now)/1000);
+    pwInput.disabled = true;
+    pwSubmit.disabled = true;
+    pwSubmit.textContent = `Khóa (${remain}s)`;
+    pwErr.innerHTML = `<div class="lock">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Đã sai ${CONFIG.MAX_ATTEMPTS} lần. Vui lòng thử lại sau <b>${remain}s</b>.
+    </div>`;
+    return true;
+  }else{
+    pwInput.disabled = false;
+    pwSubmit.disabled = false;
+    pwSubmit.textContent = "Mở khóa";
+    if(lock.attempts > 0){
+      const left = CONFIG.MAX_ATTEMPTS - lock.attempts;
+      pwErr.textContent = left>0 ? `Mật khẩu sai. Còn ${left} lần thử.` : "";
+    }
+    return false;
+  }
+}
+
+function startLockCountdown(){
+  stopLockTimer();
+  if(!renderLockState()) return;
+  lockTimer = setInterval(()=>{
+    const stillLocked = renderLockState();
+    if(!stillLocked){
+      stopLockTimer();
+      // hết khóa: reset attempts
+      clearLock();
+      pwErr.textContent = "";
+      pwInput.focus();
+    }
+  }, 500);
+}
+
+function showGate(msg=""){
+  state.exp = 0; state.editing = false; state.edited.clear();
+  clearSessionStore();
+  stopTimer();
+  appEl.classList.add("hidden"); appEl.setAttribute("aria-hidden","true");
+  gateEl.classList.remove("hidden");
+  pwInput.value = "";
+  pwErr.textContent = msg || "";
+  updateSaveBar();
+  startLockCountdown();
+  setTimeout(()=>{ if(!pwInput.disabled) pwInput.focus(); }, 50);
+}
+
+function showApp(){
+  gateEl.classList.add("hidden");
+  appEl.classList.remove("hidden"); appEl.setAttribute("aria-hidden","false");
+  hydrateOverrides();
+  render();
+  startTimer();
+  document.getElementById("q").focus();
+  updateEditButton();
+}
+
+pwForm.addEventListener("submit", e=>{
+  e.preventDefault();
+  if(isLocked()){ renderLockState(); return; }
+
+  const value = pwInput.value;
+  if(value === CONFIG.PASSWORD){
+    clearLock();
+    grantSession();
+    // nạp meta + dữ liệu
+    const meta = window.INVENTORY_DATA || { items: [], updated: "" };
+    document.getElementById("metaInfo").textContent = `${meta.items.length} mặt hàng • Cập nhật ${meta.updated || "—"}`;
+    document.getElementById("updatedAt").textContent = meta.updated || "—";
+    showApp();
+  }else{
+    const lock = getLock();
+    const attempts = lock.attempts + 1;
+    if(attempts >= CONFIG.MAX_ATTEMPTS){
+      setLock({ attempts, until: Date.now() + CONFIG.LOCK_MS });
+      pwInput.value = "";
+      pwWrap.classList.add("shake"); setTimeout(()=>pwWrap.classList.remove("shake"),450);
+      startLockCountdown();
+    }else{
+      setLock({ attempts, until: 0 });
+      pwInput.value = "";
+      pwWrap.classList.add("shake"); setTimeout(()=>pwWrap.classList.remove("shake"),450);
+      const left = CONFIG.MAX_ATTEMPTS - attempts;
+      pwErr.textContent = `Mật khẩu sai. Còn ${left} lần thử.`;
+      pwInput.focus();
+    }
+  }
+});
+
+/* ============ APP UI ============ */
+const listEl   = document.getElementById("list");
+const qEl      = document.getElementById("q");
+const clearBtn = document.getElementById("clearBtn");
+const statsEl  = document.getElementById("stats");
+const editBtn  = document.getElementById("editBtn");
+const savebar  = document.getElementById("savebar");
+const dirtyCountEl = document.getElementById("dirtyCount");
+const editBanner   = document.getElementById("editBanner");
+
+function currentNhap(it){
+  const p = state.edited.get(it.ma); if(p && "nhap" in p) return p.nhap;
+  const o = state.overrides.get(it.ma); if(o && "nhap" in o) return o.nhap;
+  return it.nhap;
+}
+function currentBan(it){
+  const p = state.edited.get(it.ma); if(p && "ban" in p) return p.ban;
+  const o = state.overrides.get(it.ma); if(o && "ban" in o) return o.ban;
+  return it.ban;
+}
+function isOverridden(it){ return state.overrides.has(it.ma) || state.edited.has(it.ma); }
+
+function render(){
+  const q = state.query.trim();
+  const terms = q ? normalize(q).split(/\s+/).filter(Boolean) : [];
+  const data = (window.INVENTORY_DATA && window.INVENTORY_DATA.items) || [];
+  const filtered = data.filter(it=>{
+    if(!terms.length) return true;
+    const hay = normalize(it.ten + " " + it.ma);
+    return terms.every(t => hay.includes(t));
+  });
+  filtered.sort((a,b)=>{
+    const ba = currentBan(a), bb = currentBan(b);
+    const pa = ba>0, pb = bb>0;
+    if(pa !== pb) return pa ? -1 : 1;
+    if(bb !== ba) return bb - ba;
+    return a.ten.localeCompare(b.ten,"vi");
+  });
+
+  if(filtered.length === 0){
+    listEl.innerHTML = `
+      <div class="empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <p>Không tìm thấy mặt hàng phù hợp</p>
+      </div>`;
+  }else{
+    const frag = document.createDocumentFragment();
+    for(const it of filtered){
+      const row = document.createElement("div");
+      row.className = "row" + (state.edited.has(it.ma) ? " dirty" : "");
+      row.dataset.ma = it.ma;
+      const n = currentNhap(it), b = currentBan(it);
+      const nhapCls = n>0 ? "nhap" : "nhap zero";
+      const banCls  = b>0 ? "ban"  : "ban zero";
+
+      let nhapCell, banCell;
+      if(state.editing){
+        nhapCell = `<input class="price-input" type="text" inputmode="numeric" data-field="nhap" value="${fmtInput(n)}" aria-label="Giá nhập ${escapeHtml(it.ma)}">`;
+        banCell  = `<input class="price-input" type="text" inputmode="numeric" data-field="ban"  value="${fmtInput(b)}" aria-label="Giá bán ${escapeHtml(it.ma)}">`;
+      }else{
+        nhapCell = `<div class="${nhapCls}">${fmtVND(n)}</div>`;
+        banCell  = `<div class="${banCls}">${fmtVND(b)}</div>`;
+      }
+
+      row.innerHTML = `
+        <div class="ma" data-label="Mã">${escapeHtml(it.ma)}</div>
+        <div class="ten" data-label="Tên hàng">${highlight(it.ten, terms)}</div>
+        <div class="dvt" data-label="ĐVT">${escapeHtml(it.dvt||"—")}</div>
+        <div data-label="Giá nhập">${nhapCell}</div>
+        <div data-label="Giá bán">${banCell}</div>
+      `;
+      frag.appendChild(row);
+    }
+    listEl.replaceChildren(frag);
+  }
+  statsEl.textContent = `Hiển thị ${filtered.length}/${data.length} mặt hàng`;
+  updateSaveBar();
+}
+
+/* Edit input change */
+listEl.addEventListener("input", e=>{
+  const el = e.target.closest(".price-input");
+  if(!el) return;
+  const row = el.closest(".row");
+  const ma = row.dataset.ma;
+  const field = el.dataset.field;
+  const raw = parseMoney(el.value);
+  const formatted = fmtInput(raw);
+  if(el.value !== formatted){ el.value = formatted; }
+
+  const data = (window.INVENTORY_DATA && window.INVENTORY_DATA.items) || [];
+  const orig = data.find(x=>x.ma===ma);
+  if(!orig) return;
+  // so sánh với giá trị hiện có (override nếu có)
+  const base = state.overrides.get(ma) || {};
+  const currentVal = field in base ? base[field] : orig[field];
+
+  let patch = state.edited.get(ma) || {};
+  if(raw === currentVal){
+    delete patch[field];
+    if(Object.keys(patch).length===0) state.edited.delete(ma);
+    else state.edited.set(ma, patch);
+    row.classList.remove("dirty"); el.classList.remove("changed");
+  }else{
+    patch[field] = raw;
+    state.edited.set(ma, patch);
+    row.classList.add("dirty"); el.classList.add("changed");
+  }
+  updateSaveBar();
+});
+
+function updateSaveBar(){
+  const n = state.edited.size;
+  savebar.classList.toggle("hidden", !(state.editing && n>0));
+  dirtyCountEl.textContent = n;
+}
+function updateEditButton(){
+  editBtn.classList.toggle("active", state.editing);
+  editBtn.querySelector("span").textContent = state.editing ? "Đang sửa" : "Sửa";
+  editBanner.classList.toggle("hidden", !state.editing);
+}
+
+editBtn.addEventListener("click", ()=>{
+  if(state.editing && state.edited.size>0){
+    if(!confirm("Có thay đổi chưa lưu. Thoát chế độ sửa sẽ mất thay đổi. Tiếp tục?")) return;
+    state.edited.clear();
+  }
+  state.editing = !state.editing;
+  updateEditButton();
+  render();
+});
+
+document.getElementById("cancelBtn").addEventListener("click", ()=>{
+  if(state.edited.size === 0) return;
+  if(!confirm("Hủy toàn bộ thay đổi?")) return;
+  state.edited.clear();
+  render();
+});
+
+document.getElementById("saveBtn").addEventListener("click", ()=>{
+  if(state.edited.size === 0) return;
+  // hợp nhất edited vào overrides
+  for(const [ma, patch] of state.edited.entries()){
+    const cur = state.overrides.get(ma) || {};
+    const next = { ...cur };
+    for(const k of Object.keys(patch)){
+      // Nếu giá trị bằng gốc thì xóa override để "quay về seed"
+      const data = (window.INVENTORY_DATA && window.INVENTORY_DATA.items) || [];
+      const orig = data.find(x=>x.ma===ma);
+      if(orig && patch[k] === orig[k]) delete next[k];
+      else next[k] = patch[k];
+    }
+    if(Object.keys(next).length===0) state.overrides.delete(ma);
+    else state.overrides.set(ma, next);
+  }
+  const payload = saveOverrides(state.overrides);
+  hydrateOverrides();
+  state.edited.clear();
+  toast(`Đã lưu ${state.overrides.size} mặt hàng chỉnh sửa`, "ok");
+  render();
+});
+
+document.getElementById("exportBtn").addEventListener("click", ()=>{
+  // Xuất danh sách items hiện tại (đã hợp nhất override + edited) dạng JSON
+  const data = (window.INVENTORY_DATA && window.INVENTORY_DATA.items) || [];
+  const merged = data.map(it=>{
+    const o = state.overrides.get(it.ma) || {};
+    const e = state.edited.get(it.ma) || {};
+    return {
+      ma: it.ma, ten: it.ten, dvt: it.dvt,
+      nhap: ("nhap" in e) ? e.nhap : (("nhap" in o) ? o.nhap : it.nhap),
+      ban:  ("ban"  in e) ? e.ban  : (("ban"  in o) ? o.ban  : it.ban),
+    };
+  });
+  const today = new Date().toISOString().slice(0,10);
+  const text = "// Dữ liệu tồn kho — đã chỉnh sửa ngày " + today + "\n"
+             + 'window.INVENTORY_DATA = ' + JSON.stringify({ updated: today, items: merged }, null, 1) + ";\n";
+  const blob = new Blob([text], { type: "text/javascript;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `data.js`;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+  toast("Đã xuất data.js — thay file trong repo & push", "ok", 3500);
+});
+
+/* Search */
+qEl.addEventListener("input", ()=>{
+  state.query = qEl.value;
+  clearBtn.classList.toggle("hidden", state.query.length===0);
+  render();
+});
+clearBtn.addEventListener("click", ()=>{
+  qEl.value=""; state.query=""; clearBtn.classList.add("hidden"); render(); qEl.focus();
+});
+
+/* Lock + timer */
+document.getElementById("logoutBtn").addEventListener("click", ()=>{
+  if(state.edited.size>0 && !confirm("Có thay đổi chưa lưu. Vẫn khóa?")) return;
+  showGate("Đã khóa. Nhập lại mật khẩu để tiếp tục.");
+});
+
+let timerHandle = null;
+function stopTimer(){ if(timerHandle){ clearInterval(timerHandle); timerHandle=null; } }
+function startTimer(){
+  stopTimer();
+  const tick = ()=>{
+    const remain = state.exp - Date.now();
+    const el  = document.getElementById("timer");
+    const txt = document.getElementById("timerText");
+    if(remain <= 0){ showGate("Phiên đã hết hạn. Vui lòng nhập lại mật khẩu."); return; }
+    const m = Math.floor(remain/60000);
+    const s = Math.floor((remain%60000)/1000);
+    txt.textContent = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    el.classList.toggle("warn", remain < 3*60*1000 && remain >= 60*1000);
+    el.classList.toggle("danger", remain < 60*1000);
+  };
+  tick();
+  timerHandle = setInterval(tick, 1000);
+}
+
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState === "visible" && !appEl.classList.contains("hidden")){
+    if(!state.exp || state.exp <= Date.now()) showGate("Phiên đã hết hạn.");
+  }
+});
+
+window.addEventListener("beforeunload", e=>{
+  if(state.edited.size > 0){ e.preventDefault(); e.returnValue = ""; }
+});
+
+/* Boot */
+(function boot(){
+  const exp = loadSession();
+  if(exp && exp > Date.now()){
+    state.exp = exp;
+    const meta = window.INVENTORY_DATA || { items: [], updated: "" };
+    document.getElementById("metaInfo").textContent = `${meta.items.length} mặt hàng • Cập nhật ${meta.updated || "—"}`;
+    document.getElementById("updatedAt").textContent = meta.updated || "—";
+    showApp();
+  }else{
+    showGate();
+  }
+})();
+</script>
+</body>
+</html>
