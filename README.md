@@ -11,7 +11,7 @@ Mở [index.html](index.html), phần `CONFIG`:
 | `PASSWORD` | `ngangiang2810@` | Mật khẩu truy cập |
 | `MAX_ATTEMPTS` | `3` | Số lần nhập sai tối đa |
 | `LOCK_MS` | `60 * 1000` | Khóa 1 phút (ms) sau khi vượt quá |
-| `SESSION_MS` | `15 * 60 * 1000` | Phiên đăng nhập 15 phút |
+| `SESSION_MS` | `7 * 24 * 60 * 60 * 1000` | Phiên đăng nhập 7 ngày (lưu `localStorage`, sống qua đóng tab) |
 
 ## Deploy GitHub + Cloudflare Pages
 
