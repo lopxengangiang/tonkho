@@ -1,46 +1,47 @@
 # Tồn kho — Tra cứu & chỉnh sửa giá
 
-Trang tĩnh tra cứu giá bán / giá nhập. Mật khẩu đơn giản + khóa 1 phút sau 3 lần sai. Chỉnh sửa giá lưu trên trình duyệt (localStorage) và có nút xuất JSON để sao lưu/đồng bộ.
+Trang tra cứu giá bán / giá nhập cho cửa hàng, chạy trên **Cloudflare Pages + Functions + KV**.
 
-## Cấu hình
+Giá trị cốt lõi, và chỉ có vậy:
 
-Mở [index.html](index.html), phần `CONFIG`:
+1. **Tra giá nhanh** — tìm theo tên/mã (không dấu cũng khớp), tối ưu điện thoại.
+2. **Sửa giá là mọi người thấy ngay** — bấm *Sửa* → nhập giá mới → *Lưu*. Giá ghi vào Cloudflare KV, mọi máy đều thấy bản mới nhất. Không còn localStorage riêng từng máy, không còn xuất JSON / commit thủ công.
+3. **Mật khẩu nằm trên server** — client không còn chứa mật khẩu hay dữ liệu giá; chưa đăng nhập thì API không trả gì.
 
-| Biến | Mặc định | Ý nghĩa |
-|---|---|---|
-| `PASSWORD` | `ngangiang2810@` | Mật khẩu truy cập |
-| `MAX_ATTEMPTS` | `3` | Số lần nhập sai tối đa |
-| `LOCK_MS` | `60 * 1000` | Khóa 1 phút (ms) sau khi vượt quá |
-| `SESSION_MS` | `7 * 24 * 60 * 60 * 1000` | Phiên đăng nhập 7 ngày (lưu `localStorage`, sống qua đóng tab) |
+## Kiến trúc
 
-## Deploy GitHub + Cloudflare Pages
-
-1. Push 2 file sau lên GitHub: `index.html`, `data.js`. README thì tùy.
-2. Cloudflare Dashboard → **Workers & Pages → Create → Pages → Connect to Git**.
-3. Build: **Framework = None**, **Build command = (trống)**, **Output = /**.
-4. Deploy. Truy cập `https://<project>.pages.dev`.
-
-Không cần env var, không cần KV, không cần Functions.
-
-## Chỉnh sửa giá
-
-Sau khi đăng nhập → bấm **Sửa** → sửa giá → bấm **Lưu** (lưu localStorage trên máy này) hoặc **Xuất JSON** (tải file `data.js` đã cập nhật — thay file cũ trong repo, commit & push để áp dụng cho mọi người).
-
-Quy tắc:
-- **Lưu**: thay đổi chỉ tồn tại trên trình duyệt hiện tại.
-- **Xuất JSON**: tải `data.js` mới → commit vào repo → đồng bộ cho mọi máy.
-
-## Cập nhật từ Excel mới
-
-```bash
-python gen_seed.py     # ghi đè data.js từ Excel
-git add data.js && git commit -m "update prices" && git push
+```
+index.html  ──► POST /api/login {password}  ──► token (HMAC, hạn 7 ngày)
+            ──► GET  /api/data  (Bearer)    ──► KV "inventory" (fallback: seed)
+            ──► PUT  /api/data  (Bearer)    ──► ghi KV → đồng bộ mọi người
 ```
 
-Sửa đường dẫn Excel trong biến `SOURCES` của [gen_seed.py](gen_seed.py).
+- `functions/api/[[path]].js` — toàn bộ API (login + đọc/ghi dữ liệu).
+- `functions/api/_seed.js` — dữ liệu khởi tạo, chỉ dùng khi KV còn trống (lần deploy đầu). Sau đó dữ liệu sống trong KV.
+- Chống dò mật khẩu: sai 3 lần → khóa IP 60 giây (đếm trong KV, phía server).
 
-## Ghi chú bảo mật
+## Deploy (Cloudflare Pages)
 
-Đây là trang tĩnh public, **mật khẩu nằm trong mã nguồn client** — ai xem source là thấy. Cơ chế khóa 3-lần-1-phút chỉ chặn dò mật khẩu bằng UI. Đây là mức bảo mật "đủ dùng cho nhóm nhỏ" — không phải mã hóa thực sự.
+1. Dashboard → **Workers & Pages → Create → Pages → Connect to Git** → chọn repo này.
+   Framework = None, build command trống, output = `/`.
+2. **KV**: Workers & Pages → KV → Create namespace (vd `tonkho`).
+   Pages project → Settings → **Bindings** → thêm KV binding, **tên biến = `TONKHO`**.
+3. **Mật khẩu**: Pages project → Settings → **Environment variables** → thêm secret **`PASSWORD`** (Production).
+4. Redeploy. Truy cập `https://<project>.pages.dev` hoặc gắn custom domain `tonkho.ngangiang.net`
+   (Pages → Custom domains — nhớ **tắt GitHub Pages** của repo nếu trước đó đang dùng, vì site này cần Functions, GitHub Pages không chạy được API).
 
-Muốn bảo vệ nghiêm túc: bật **Cloudflare Access** cho Pages project (Zero Trust → Access → Applications → Add application → Self-hosted) để buộc đăng nhập bằng email OTP của Cloudflare trước khi site được phục vụ.
+Đổi mật khẩu = sửa secret `PASSWORD` rồi redeploy (token cũ tự hết hiệu lực vì token ký bằng khóa dẫn xuất từ mật khẩu).
+
+## Cập nhật hàng loạt từ Excel
+
+Dữ liệu vận hành nằm trong KV, key `inventory`, dạng:
+
+```json
+{ "updated": "2026-08-15", "items": [ { "ma": "...", "ten": "...", "dvt": "...", "nhap": 0, "ban": 0 } ] }
+```
+
+Muốn nạp lại toàn bộ từ Excel: sinh JSON theo format trên rồi hoặc (a) ghi đè key `inventory` trong KV (dashboard/wrangler), hoặc (b) cập nhật `functions/api/_seed.js` và xóa key `inventory` để seed nạp lại.
+
+## Bảo mật
+
+Mật khẩu so khớp trên server (Pages Function), dữ liệu chỉ trả sau khi đăng nhập — hơn hẳn bản cũ (mật khẩu + toàn bộ giá nhập nằm trong file tĩnh public). Vẫn là mô hình 1 mật khẩu dùng chung cho nhóm nhỏ; muốn chặt hơn nữa thì bật **Cloudflare Access** (Zero Trust) trước site.
