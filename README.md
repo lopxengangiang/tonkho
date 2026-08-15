@@ -48,3 +48,12 @@ Muốn nạp lại toàn bộ từ Excel: sinh JSON theo format trên rồi ho�
 ## Bảo mật
 
 Mật khẩu so khớp trên server (Pages Function), dữ liệu chỉ trả sau khi đăng nhập — hơn hẳn bản cũ (mật khẩu + toàn bộ giá nhập nằm trong file tĩnh public). Vẫn là mô hình 1 mật khẩu dùng chung cho nhóm nhỏ; muốn chặt hơn nữa thì bật **Cloudflare Access** (Zero Trust) trước site.
+
+## Nhập giá từ Excel (TCVN3)
+
+```bash
+TONKHO_PASSWORD='...' python3 tools/import_xlsx.py Book1.xlsx            # xem trước
+TONKHO_PASSWORD='...' python3 tools/import_xlsx.py Book1.xlsx --execute  # ghi thật
+```
+
+Tool tự convert bảng mã TCVN3, khớp mã bị Excel cắt số 0 đầu (kèm đối chiếu tên), giữ nguyên mặt hàng không có trong file, không ghi đè giá về 0.
