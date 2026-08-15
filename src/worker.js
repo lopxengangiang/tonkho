@@ -1,11 +1,13 @@
-// API tồn kho — Cloudflare Pages Functions.
-// Cần: KV binding tên `TONKHO`, biến môi trường (secret) `PASSWORD`.
+// API tồn kho — Cloudflare Worker (kèm static assets từ ./public).
+// Cần: KV binding `TONKHO` (id trong wrangler.jsonc), secret runtime `PASSWORD`.
 //
 //   POST /api/login  {password}          -> {token}   (hạn 7 ngày, khóa IP 60s sau 3 lần sai)
 //   GET  /api/data   (Bearer token)      -> {updated, items}
 //   PUT  /api/data   (Bearer token) body -> lưu {updated, items} vào KV, đồng bộ cho mọi người
+//
+// Request khớp file trong ./public do Cloudflare serve thẳng; phần còn lại rơi vào fetch() dưới đây.
 
-import { SEED } from "./_seed.js";
+import { SEED } from "./seed.js";
 
 const SESSION_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_ATTEMPTS = 3;
@@ -88,16 +90,22 @@ async function putData(env, request) {
   return json({ ok: true, updated: payload.updated, count: items.length });
 }
 
-export async function onRequest({ request, env }) {
-  const path = new URL(request.url).pathname;
+export default {
+  async fetch(request, env) {
+    const path = new URL(request.url).pathname;
 
-  if (path === "/api/login" && request.method === "POST") return login(env, request);
+    if (!env.TONKHO || !env.PASSWORD) {
+      return json({ error: "misconfigured", message: "Thiếu KV binding TONKHO hoặc secret PASSWORD trên Worker." }, 500);
+    }
 
-  if (path === "/api/data") {
-    if (!(await isAuthed(env, request))) return json({ error: "unauthorized" }, 401);
-    if (request.method === "GET") return getData(env);
-    if (request.method === "PUT") return putData(env, request);
-  }
+    if (path === "/api/login" && request.method === "POST") return login(env, request);
 
-  return json({ error: "not_found" }, 404);
-}
+    if (path === "/api/data") {
+      if (!(await isAuthed(env, request))) return json({ error: "unauthorized" }, 401);
+      if (request.method === "GET") return getData(env);
+      if (request.method === "PUT") return putData(env, request);
+    }
+
+    return json({ error: "not_found" }, 404);
+  },
+};

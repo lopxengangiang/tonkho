@@ -1,0 +1,20 @@
+{
+  // Worker "tonkho" — API + static assets.
+  // Secret runtime PASSWORD thêm ở Dashboard: Worker → Settings → Variables and Secrets → Add → type Secret.
+  "name": "tonkho",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-08-01",
+  "assets": {
+    "directory": "./public"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "TONKHO",
+      // Tạo namespace: Dashboard → Storage & Databases → KV → Create, rồi dán ID vào đây.
+      "id": "65ddf57cec0c407fb7b191f343a1c540"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

@@ -10,27 +10,30 @@ Giá trị cốt lõi, và chỉ có vậy:
 
 ## Kiến trúc
 
+Cloudflare **Worker** `tonkho` (workers.dev / custom domain) — static assets + API + KV:
+
 ```
-index.html  ──► POST /api/login {password}  ──► token (HMAC, hạn 7 ngày)
-            ──► GET  /api/data  (Bearer)    ──► KV "inventory" (fallback: seed)
-            ──► PUT  /api/data  (Bearer)    ──► ghi KV → đồng bộ mọi người
+public/index.html ──► POST /api/login {password}  ──► token (HMAC, hạn 7 ngày)
+                  ──► GET  /api/data  (Bearer)    ──► KV "inventory" (fallback: seed)
+                  ──► PUT  /api/data  (Bearer)    ──► ghi KV → đồng bộ mọi người
 ```
 
-- `functions/api/[[path]].js` — toàn bộ API (login + đọc/ghi dữ liệu).
-- `functions/api/_seed.js` — dữ liệu khởi tạo, chỉ dùng khi KV còn trống (lần deploy đầu). Sau đó dữ liệu sống trong KV.
+- `src/worker.js` — toàn bộ API (login + đọc/ghi dữ liệu). Request khớp file trong `public/` được Cloudflare serve thẳng, còn lại rơi vào Worker.
+- `src/seed.js` — dữ liệu khởi tạo, chỉ dùng khi KV còn trống (lần deploy đầu). Sau đó dữ liệu sống trong KV.
+- `wrangler.jsonc` — cấu hình deploy: assets `./public`, KV binding `TONKHO`. Binding do file này quản lý — đừng gắn tay trên dashboard (deploy sau sẽ ghi đè).
 - Chống dò mật khẩu: sai 3 lần → khóa IP 60 giây (đếm trong KV, phía server).
 
-## Deploy (Cloudflare Pages)
+## Deploy
 
-1. Dashboard → **Workers & Pages → Create → Pages → Connect to Git** → chọn repo này.
-   Framework = None, build command trống, output = `/`.
-2. **KV**: Workers & Pages → KV → Create namespace (vd `tonkho`).
-   Pages project → Settings → **Bindings** → thêm KV binding, **tên biến = `TONKHO`**.
-3. **Mật khẩu**: Pages project → Settings → **Environment variables** → thêm secret **`PASSWORD`** (Production).
-4. Redeploy. Truy cập `https://<project>.pages.dev` hoặc gắn custom domain `tonkho.ngangiang.net`
-   (Pages → Custom domains — nhớ **tắt GitHub Pages** của repo nếu trước đó đang dùng, vì site này cần Functions, GitHub Pages không chạy được API).
+Worker nối GitHub repo này (Workers Builds) — push lên `main` là tự build + deploy bằng `npx wrangler deploy` (đọc `wrangler.jsonc`).
 
-Đổi mật khẩu = sửa secret `PASSWORD` rồi redeploy (token cũ tự hết hiệu lực vì token ký bằng khóa dẫn xuất từ mật khẩu).
+Cần cấu hình một lần trên dashboard:
+
+1. **KV**: Storage & Databases → KV → Create namespace, dán ID vào `kv_namespaces[0].id` trong `wrangler.jsonc`.
+2. **Mật khẩu**: Worker → Settings → Variables and Secrets → Add → **Type = Secret**, Name = `PASSWORD`.
+3. Custom domain (tùy chọn): Worker → Settings → Domains & Routes → thêm `tonkho.ngangiang.net` (nhớ tắt GitHub Pages của repo nếu trước đó đang dùng).
+
+Đổi mật khẩu = sửa secret `PASSWORD` (token cũ tự hết hiệu lực vì token ký bằng khóa dẫn xuất từ mật khẩu).
 
 ## Cập nhật hàng loạt từ Excel
 
@@ -40,7 +43,7 @@ Dữ liệu vận hành nằm trong KV, key `inventory`, dạng:
 { "updated": "2026-08-15", "items": [ { "ma": "...", "ten": "...", "dvt": "...", "nhap": 0, "ban": 0 } ] }
 ```
 
-Muốn nạp lại toàn bộ từ Excel: sinh JSON theo format trên rồi hoặc (a) ghi đè key `inventory` trong KV (dashboard/wrangler), hoặc (b) cập nhật `functions/api/_seed.js` và xóa key `inventory` để seed nạp lại.
+Muốn nạp lại toàn bộ từ Excel: sinh JSON theo format trên rồi hoặc (a) ghi đè key `inventory` trong KV (dashboard/wrangler), hoặc (b) cập nhật `src/seed.js` và xóa key `inventory` để seed nạp lại.
 
 ## Bảo mật
 
